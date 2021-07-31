@@ -1,17 +1,17 @@
 # THE LIST OF PLUGINS AND THE CORRESPONDING SOURCE FILES
 # ======================================================
 set(LLVM_TUTOR_PLUGINS
-    StaticCallCounter
-    DynamicCallCounter
-    FindFCmpEq
-    ConvertFCmpEq
-    InjectFuncCall
+    # StaticCallCounter
+    # DynamicCallCounter
+    # FindFCmpEq
+    # ConvertFCmpEq
+    # InjectFuncCall
     MBAAdd
-    MBASub
-    RIV
-    DuplicateBB
-    OpcodeCounter
-    MergeBB
+    # MBASub
+    # RIV
+    # DuplicateBB
+    # OpcodeCounter
+    # MergeBB
     )
 
 set(StaticCallCounter_SOURCES
