@@ -20,7 +20,7 @@
 //
 // License: MIT
 //==============================================================================
-#include "MBASub.h"
+#include "VECSub.h"
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/IRBuilder.h"
@@ -60,7 +60,7 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
     // them into basic blocks.
     IRBuilder<> Builder(BinOp);
     // Constants used in building the instruction for substitution
-    auto Val_Carry_temp = ConstantInt::get(context, llvm::APInt(64,  
+    auto Val_Carry_temp = ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
                                               0xffffffffffffffff, false));
     // Create an instruction representing t0 = ~vin1[0]
     Instruction *PartOne = Builder.CreateNot(BinOp->getOperand(1));
