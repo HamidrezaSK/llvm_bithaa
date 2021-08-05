@@ -64,6 +64,6 @@ now all so files are created in lib folder.
 cd ../inputs
 
 /<path to your llvm .build folder>/bin/clang -emit-llvm -S -O1 input_for_mba.c 
-/<path to your llvm .build folder>/bin/opt -load-pass-plugin ../lib/libMBAAdd.so -passes=mba-add input_for_mba.ll -S -o output_for_mba.c
+/<path to your llvm .build folder>/bin/opt -load-pass-plugin ../lib/libMBAAdd.so -passes=mba-add input_for_mba.ll -S -o output_for_mba.ll
 
 ```
