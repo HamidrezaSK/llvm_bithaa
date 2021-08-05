@@ -62,17 +62,18 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
     // Constants used in building the instruction for substitution
     auto Val_Carry_temp = ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
                                               0xffffffffffffffff, false));
-    auto Oprand_One_64Cast= ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
-                                              BinOp->getOperand(1)->getvalue, true));
+    // auto Oprand_One_64Cast= ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
+    //                                           BinOp->getOperand(1)->getvalue, true));
     // Create an instruction representing t0 = ~vin1[0]
-    Instruction *PartOne = BinaryOperator::CreateXor(Oprand_One_64Cast,
-                                             ConstantInt::get(BinOp->getContext(),llvm::APInt(64,-1, true)));
+    Instruction *PartOne = BinaryOperator::CreateXor(BinOp->getOperand(1),
+                                             ConstantInt::get(BinOp->getContext(),llvm::APInt(64,-1, false)));
     // Create an instruction representing sum_temp = vin0[0]  ^ t0 ^ carry_temp
     Instruction *PartTwo = BinaryOperator::CreateXor(BinOp->getOperand(0),
                                               Builder.CreateXor(PartOne,Val_Carry_temp));
     // Create an instruction representing carry_temp
     // Instruction *PartCarry = 
-
+    // Instruction *NewValue = BinaryOperator::CreateXor(
+    //     BinOp->getOperand(1),);
         
     // Create an instruction representing (a + ~b) + 1
     Instruction *NewValue = BinaryOperator::CreateAdd(
