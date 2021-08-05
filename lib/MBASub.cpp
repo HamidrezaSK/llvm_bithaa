@@ -61,10 +61,6 @@ bool MBASub::runOnBasicBlock(BasicBlock &BB) {
     IRBuilder<> Builder(BinOp);
 
     // Create an instruction representing (a + ~b) + 1
-    Instruction *PartOne = BinaryOperator::CreateXor(
-        BinOp->getOperand(1),ConstantInt::get(
-          BinOp->getContext(),llvm::APInt(64,-1, true)));
-
     Instruction *NewValue = BinaryOperator::CreateAdd(
         Builder.CreateAdd(BinOp->getOperand(0),
                           Builder.CreateNot(BinOp->getOperand(1))),
