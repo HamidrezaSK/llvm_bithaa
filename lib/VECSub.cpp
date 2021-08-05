@@ -62,8 +62,10 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
     // Constants used in building the instruction for substitution
     auto Val_Carry_temp = ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
                                               0xffffffffffffffff, false));
+    auto Oprand_One_64Cast= ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
+                                              BinOp->getOperand(1)->getvalue, true));
     // Create an instruction representing t0 = ~vin1[0]
-    Instruction *PartOne = BinaryOperator::CreateXor(BinOp->getOperand(1),
+    Instruction *PartOne = BinaryOperator::CreateXor(Oprand_One_64Cast,
                                              ConstantInt::get(BinOp->getContext(),llvm::APInt(64,-1, true)));
     // Create an instruction representing sum_temp = vin0[0]  ^ t0 ^ carry_temp
     Instruction *PartTwo = BinaryOperator::CreateXor(BinOp->getOperand(0),
@@ -80,11 +82,11 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
 
     // The following is visible only if you pass -debug on the command line
     // *and* you have an assert build.
-    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartTwo << "\n");
+    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
 
     // Replace `(a - b)` (original instructions) with `(a + ~b) + 1`
     // (the new instruction)
-    ReplaceInstWithInst(BB.getInstList(), Inst, PartTwo);
+    ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
     Changed = true;
 
     // Update the statistics
