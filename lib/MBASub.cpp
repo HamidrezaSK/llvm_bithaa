@@ -72,11 +72,11 @@ bool MBASub::runOnBasicBlock(BasicBlock &BB) {
 
     // The following is visible only if you pass -debug on the command line
     // *and* you have an assert build.
-    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
+    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *NewValue << "\n");
 
     // Replace `(a - b)` (original instructions) with `(a + ~b) + 1`
     // (the new instruction)
-    ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+    ReplaceInstWithInst(BB.getInstList(), Inst, NewValue);
     Changed = true;
 
     // Update the statistics
