@@ -63,9 +63,10 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
     auto Val_Carry_temp = ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
                                               0xffffffffffffffff, false));
     // Create an instruction representing t0 = ~vin1[0]
-    Instruction *PartOne = Builder.CreateNot(BinOp->getOperand(1));
+    Instruction *PartOne = BinaryOperator::CreateXor(BinOp->getOperand(1),
+                                             ConstantInt::get(BinOp->getContext(),llvm::APInt(64,-1, true)));
     // Create an instruction representing sum_temp = vin0[0]  ^ t0 ^ carry_temp
-    Instruction *PartTwo = Builder.CreateXor(BinOp->getOperand(0),
+    Instruction *PartTwo = BinaryOperator::CreateXor(BinOp->getOperand(0),
                                               Builder.CreateXor(PartOne,Val_Carry_temp));
     // Create an instruction representing carry_temp
     // Instruction *PartCarry = 
