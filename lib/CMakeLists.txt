@@ -8,7 +8,7 @@ set(LLVM_TUTOR_PLUGINS
     # InjectFuncCall
     MBAAdd
     VECSub
-    # MBASub
+    MBASub
     # RIV
     # DuplicateBB
     # OpcodeCounter
