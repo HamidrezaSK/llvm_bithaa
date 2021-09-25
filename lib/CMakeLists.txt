@@ -7,7 +7,8 @@ set(LLVM_TUTOR_PLUGINS
     # ConvertFCmpEq
     # InjectFuncCall
     MBAAdd
-    # MBASub
+    VECSub
+    MBASub
     # RIV
     # DuplicateBB
     # OpcodeCounter
@@ -38,6 +39,8 @@ set(OpcodeCounter_SOURCES
   OpcodeCounter.cpp)
 set(MergeBB_SOURCES
   MergeBB.cpp)
+set(VECSub_SOURCES
+  VECSub.cpp)
 
 # CONFIGURE THE PLUGIN LIBRARIES
 # ==============================
