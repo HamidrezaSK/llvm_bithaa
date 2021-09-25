@@ -73,44 +73,75 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
     // Create an instruction representing sum_temp = vin0[0]  ^ t0 ^ carry_temp
    
    
-   
-   
-   
+   Instruction *PartOne;
+   Instruction *PartTwo;
+   Value *carryTemp;
+   if(flag == 1)
+   {
+      flag = 1;
+
+            auto notVec1 = Builder.CreateNot(BinOp->getOperand(1));
+           PartTwo = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
+                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTemp),Builder.CreateAnd(notVec1,carryTemp)));
+	   carryTemp = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
+                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTemp),Builder.CreateAnd(notVec1,carryTemp)));
+            BB.getInstList().insert(Inst, PartTwo);
+
+            PartOne = BinaryOperator::CreateAnd(BinOp->getOperand(0),
+                                        Builder.CreateAnd(Val_Carry_temp,
+                                             Builder.CreateNot(BinOp->getOperand(1))));
+
+//          Value *CarryTempAddr = Builder.CreatePtrToInt(PartTwo->getValue(), Builder.getInt64Ty());
+            LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
+
+
+            LLVM_DEBUG(dbgs() << "-*-" << " -> " << *PartTwo << "\n");
+
+            // Replacing the custom made instruction with the old one
+
+            ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+
+            Changed = true;
+
+
+            // Update the statistics
+
+            ++SubstCount;	
+   }
+
    
    
     if(flag == 0)
     {
-    Instruction *PartTwo = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Builder.CreateNot(BinOp->getOperand(1))),
-                                              Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Val_Carry_temp),Builder.CreateAnd(Builder.CreateNot(BinOp->getOperand(1)),Val_Carry_temp)));
-    BB.getInstList().insert(Inst, PartTwo);
+    flag = 1;
+ 
+	    auto notVec1 = Builder.CreateNot(BinOp->getOperand(1));
+	    carryTemp = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
+                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Val_Carry_temp),Builder.CreateAnd(notVec1,Val_Carry_temp)));
+    	    PartTwo = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
+                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Val_Carry_temp),Builder.CreateAnd(notVec1,Val_Carry_temp)));
+    	    BB.getInstList().insert(Inst, PartTwo);
     
-    Instruction *PartOne = BinaryOperator::CreateAnd(BinOp->getOperand(0),
+	    PartOne = BinaryOperator::CreateAnd(BinOp->getOperand(0),
                                         Builder.CreateAnd(Val_Carry_temp,
                                              Builder.CreateNot(BinOp->getOperand(1))));
 
-    // Create an instruction representing carry_temp
-    // Instruction *PartCarry = 
-    // Instruction *NewValue = BinaryOperator::CreateXor(
-    //     BinOp->getOperand(1),);
-        
-    // Create an instruction representing (a + ~b) + 1
-   // Instruction *NewValue = BinaryOperator::CreateAdd(
-    //    Builder.CreateAdd(BinOp->getOperand(0),
-      //                    Builder.CreateNot(BinOp->getOperand(1))),
-       // ConstantInt::get(BinOp->getType(), 1));
+//	    Value *CarryTempAddr = Builder.CreatePtrToInt(PartTwo->getValue(), Builder.getInt64Ty());
+	    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
 
-    // The following is visible only if you pass -debug on the command line
-    // *and* you have an assert build.
-    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
+    
+	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *PartTwo << "\n");
+    
+	    // Replacing the custom made instruction with the old one
+    
+	    ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+ 
+	    Changed = true;
 
-    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *PartTwo << "\n");
-    // Replace `(a - b)` (original instructions) with `(a + ~b) + 1`
-    // (the new instruction)
-    ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
-    Changed = true;
-
-    // Update the statistics
-    ++SubstCount;
+    
+	    // Update the statistics
+    
+	    ++SubstCount;
     }
   }
   return Changed;
