@@ -18,7 +18,7 @@
 //      $ opt -load <BUILD_DIR>/lib/libVECAdd.so --legacy-vec-add <bitcode-file>
 //    2. New pass maanger:
 //      $ opt -load-pass-plugin <BUILD_DIR>/lib/libVECAdd.so `\`
-//        -passes=-"vec-add" <bitcode-file>
+//        -passes=-"vec-add" <bitcode-file> -S -o <output-file>
 //
 
 //==============================================================================
@@ -68,24 +68,22 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
    
    
    Instruction *sumTemp;
-   Instruction *carryTempInstruction;
    Value *carryTempValue;
    if(flag == 1)
    {
         flag = 1;
-
-        carryTempInstruction = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
-	    carryTempValue = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
-        BB.getInstList().insert(Inst, carryTempInstruction);
-
-	    sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
+            sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
                                         Builder.CreateXor(carryTempValue,
                                              BinOp->getOperand(1)));
+//        carryTempInstruction = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
+	    carryTempValue = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
+  //      BB.getInstList().insert(Inst, carryTempInstruction);
+
 
         LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
 
 
-        LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempInstruction << "\n");
+        LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempValue << "\n");
 
         // Replacing the custom made instruction with the old one
 
@@ -106,8 +104,8 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
         flag = 1;
  
 	    carryTempValue = Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
-    	carryTempInstruction = BinaryOperator::CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
-    	BB.getInstList().insert(Inst, carryTempInstruction);
+    //	carryTempInstruction = BinaryOperator::CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
+    //	BB.getInstList().insert(Inst, carryTempInstruction);
     
 	    sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
                                         Builder.CreateXor(initCarryTemp,
@@ -116,7 +114,7 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
 	    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
 
     
-	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempInstruction << "\n");
+	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempValue << "\n");
     
 	    // Replacing the custom made instruction with the old one
     
