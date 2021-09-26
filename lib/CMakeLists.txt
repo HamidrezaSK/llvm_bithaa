@@ -42,6 +42,8 @@ set(MergeBB_SOURCES
   MergeBB.cpp)
 set(VECSub_SOURCES
   VECSub.cpp)
+set(VECAdd_SOURCES
+  VECAdd.cpp)
 
 # CONFIGURE THE PLUGIN LIBRARIES
 # ==============================
