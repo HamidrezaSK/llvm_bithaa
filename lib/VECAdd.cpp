@@ -1,6 +1,6 @@
 //==============================================================================
 // FILE:
-//    VECSub.cpp
+//    VECAdd.cpp
 //
 // DESCRIPTION:
 //    bitslicing normal vectorized addition instructions:
@@ -15,14 +15,14 @@
 //
 // USAGE:
 //    1. Legacy pass manager:
-//      $ opt -load <BUILD_DIR>/lib/libVECSub.so --legacy-vec-sub <bitcode-file>
+//      $ opt -load <BUILD_DIR>/lib/libVECAdd.so --legacy-vec-add <bitcode-file>
 //    2. New pass maanger:
-//      $ opt -load-pass-plugin <BUILD_DIR>/lib/libVECsub.so `\`
-//        -passes=-"vec-sub" <bitcode-file> -S -o <output-file>
+//      $ opt -load-pass-plugin <BUILD_DIR>/lib/libVECAdd.so `\`
+//        -passes=-"vec-add" <bitcode-file> -S -o <output-file>
 //
 
 //==============================================================================
-#include "VECSub.h"
+#include "VECAdd.h"
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/IRBuilder.h"
@@ -34,21 +34,21 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "vec-sub"
+#define DEBUG_TYPE "vec-add"
 
 STATISTIC(SubstCount, "The # of substituted instructions");
 
 //-----------------------------------------------------------------------------
-// VECSub Implementaion
+// VECAdd Implementaion
 //-----------------------------------------------------------------------------
-bool VECSub::runOnBasicBlock(BasicBlock &BB) {
+bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
   bool Changed = false;
 
   // Loop over all instructions in the block. Replacing instructions requires
   // iterators, hence a for-range loop wouldn't be suitable.
   short flag = 0;
-  auto Val_Carry_temp = ConstantInt::get(BB.getContext(), llvm::APInt(64,
-                                              0xffffffffffffffff, false));
+  auto initCarryTemp = ConstantInt::get(BB.getContext(), llvm::APInt(64,
+                                              0, false));
   for (auto Inst = BB.begin(), IE = BB.end(); Inst != IE; ++Inst) {
 
     // Skip non-binary (e.g. unary or compare) instruction.
@@ -56,69 +56,66 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
     if (!BinOp)
       continue;
 
-    /// Skip instructions other than integer sub.
+    /// Skip instructions other than integer add.
     unsigned Opcode = BinOp->getOpcode();
-    if (Opcode != Instruction::Sub || !BinOp->getType()->isIntegerTy())
+    if (Opcode != Instruction::Add || !BinOp->getType()->isIntegerTy())
       continue;
 
     // A uniform API for creating instructions and inserting
     // them into basic blocks.
     IRBuilder<> Builder(BinOp);
+
    
    
-    Instruction *PartOne;
-    Value *carryTemp;
-    if(flag == 1)
-    {
-      flag = 1;
-
-      auto notVec1 = Builder.CreateNot(BinOp->getOperand(1));
-      PartOne = BinaryOperator::CreateXor(BinOp->getOperand(0),
-                                  Builder.CreateXor(carryTemp,notVec1));
-      carryTemp = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
-                              Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTemp),Builder.CreateAnd(notVec1,carryTemp)));
+   Instruction *sumTemp;
+   Value *carryTempValue;
+   if(flag == 1)
+   {
+        flag = 1;
+        sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
+                                    Builder.CreateXor(carryTempValue,
+                                            BinOp->getOperand(1)));
+	    carryTempValue = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
 
 
-
-      LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
-
-
-      LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTemp << "\n");
-
-      // Replacing the custom made instruction with the old one
-
-      ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
-
-      Changed = true;
+        LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
 
 
-      // Update the statistics
+        LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempValue << "\n");
 
-      ++SubstCount;	
-    }
+        // Replacing the custom made instruction with the old one
+
+        ReplaceInstWithInst(BB.getInstList(), Inst, sumTemp);
+
+        Changed = true;
+
+
+        // Update the statistics
+
+        ++SubstCount;	
+   }
 
    
    
     if(flag == 0)
     {
-      flag = 1; 
+        flag = 1;
  
-	    auto notVec1 = Builder.CreateNot(BinOp->getOperand(1));
-	    carryTemp = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
-                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Val_Carry_temp),Builder.CreateAnd(notVec1,Val_Carry_temp)));
-      // BB.getInstList().insert(Inst, PartTwo);
+	    carryTempValue = Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
+    //	BB.getInstList().insert(Inst, carryTempInstruction);
     
-	    PartOne = BinaryOperator::CreateXor(BinOp->getOperand(0),
-                                        Builder.CreateXor(Val_Carry_temp,notVec1));
+	    sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
+                                        Builder.CreateXor(initCarryTemp,
+                                             BinOp->getOperand(1)));
 
-	    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
+	    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
 
     
-	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTemp << "\n");
+	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempValue << "\n");
     
 	    // Replacing the custom made instruction with the old one
     
-	    ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+	    ReplaceInstWithInst(BB.getInstList(), Inst, sumTemp);
  
 	    Changed = true;
 
@@ -131,7 +128,7 @@ bool VECSub::runOnBasicBlock(BasicBlock &BB) {
   return Changed;
 }
 
-PreservedAnalyses VECSub::run(llvm::Function &F,
+PreservedAnalyses VECAdd::run(llvm::Function &F,
                               llvm::FunctionAnalysisManager &) {
   bool Changed = false;
 
@@ -142,7 +139,7 @@ PreservedAnalyses VECSub::run(llvm::Function &F,
                   : llvm::PreservedAnalyses::all());
 }
 
-bool LegacyVECSub::runOnFunction(llvm::Function &F) {
+bool LegacyVECAdd::runOnFunction(llvm::Function &F) {
   bool Changed = false;
 
   for (auto &BB : F) {
@@ -154,14 +151,14 @@ bool LegacyVECSub::runOnFunction(llvm::Function &F) {
 //-----------------------------------------------------------------------------
 // New PM Registration
 //-----------------------------------------------------------------------------
-llvm::PassPluginLibraryInfo getVECSubPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "vec-sub", LLVM_VERSION_STRING,
+llvm::PassPluginLibraryInfo getVECAddPluginInfo() {
+  return {LLVM_PLUGIN_API_VERSION, "vec-add", LLVM_VERSION_STRING,
           [](PassBuilder &PB) {
             PB.registerPipelineParsingCallback(
                 [](StringRef Name, FunctionPassManager &FPM,
                    ArrayRef<PassBuilder::PipelineElement>) {
-                  if (Name == "vec-sub") {
-                    FPM.addPass(VECSub());
+                  if (Name == "vec-add") {
+                    FPM.addPass(VECAdd());
                     return true;
                   }
                   return false;
@@ -171,16 +168,16 @@ llvm::PassPluginLibraryInfo getVECSubPluginInfo() {
 
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
-  return getVECSubPluginInfo();
+  return getVECAddPluginInfo();
 }
 
 //-----------------------------------------------------------------------------
 // Legacy PM Registration
 //-----------------------------------------------------------------------------
-char LegacyVECSub::ID = 0;
+char LegacyVECAdd::ID = 0;
 
 // Register the pass - required for (among others) opt
-static RegisterPass<LegacyVECSub> X(/*PassArg=*/"legacy-vec-sub",
-                                    /*Name=*/"VECSub",
+static RegisterPass<LegacyVECAdd> X(/*PassArg=*/"legacy-vec-add",
+                                    /*Name=*/"VECAdd",
                                     /*CFGOnly=*/true,
                                     /*is_analysis=*/false);
