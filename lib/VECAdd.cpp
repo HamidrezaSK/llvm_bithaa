@@ -3,10 +3,14 @@
 //    VECAdd.cpp
 //
 // DESCRIPTION:
-//    Obfuscation for integer sub instructions through Mixed Boolean Arithmetic
-//    (MBA). This pass performs an instruction substitution based on this
-//    equality:
-//      a - b == (a + ~b) + 1
+//    bitslicing normal vectorized addition instructions:
+//      a + b ---->
+//      t0 = ~vin1[0];
+//      sum_temp = vin0[0]  ^ t0 ^ carry_temp;
+//      carry_temp = (vin0[0]  & t0) | (vin0[0]  & carry_temp) | (t0  & carry_temp);
+//      t0 = sum_temp;
+
+//      vout[0] =  t0;
 //
 //
 // USAGE:
@@ -43,8 +47,8 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
   // Loop over all instructions in the block. Replacing instructions requires
   // iterators, hence a for-range loop wouldn't be suitable.
   short flag = 0;
-  auto Val_Carry_temp = ConstantInt::get(BB.getContext(), llvm::APInt(64,
-                                              0xffffffffffffffff, false));
+  auto initCarryTemp = ConstantInt::get(BB.getContext(), llvm::APInt(64,
+                                              0, false));
   for (auto Inst = BB.begin(), IE = BB.end(); Inst != IE; ++Inst) {
 
     // Skip non-binary (e.g. unary or compare) instruction.
@@ -54,85 +58,69 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
 
     /// Skip instructions other than integer sub.
     unsigned Opcode = BinOp->getOpcode();
-    if (Opcode != Instruction::Add || !BinOp->getType()->isIntegerTy())
+    if (Opcode != Instruction::Add || !BinOp->getType()->isInteger64Ty())
       continue;
 
     // A uniform API for creating instructions and inserting
     // them into basic blocks.
     IRBuilder<> Builder(BinOp);
-    // Constants used in building the instruction for substitution
-   // auto Val_Carry_temp = ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
-     //                                         0xffffffffffffffff, false));
-    // auto Oprand_One_64Cast= ConstantInt::get(BinOp->getContext(), llvm::APInt(64,  
-    //                                           BinOp->getOperand(1)->getvalue, true));
-    // Create an instruction representing t0 = ~vin1[0]
-                                           
-    //Val_Carry_temp = BinOp->getOperand(1) & Val_Carry_temp;
-    // Create an instruction representing sum_temp = vin0[0]  ^ t0 ^ carry_temp
+
    
    
-   Instruction *PartOne;
-   Instruction *PartTwo;
-   Value *carryTemp;
+   Instruction *sumTemp;
+   Instruction *carryTempInstruction;
+   Value *carryTempValue;
    if(flag == 1)
    {
-      flag = 1;
+        flag = 1;
 
-            auto notVec1 = Builder.CreateNot(BinOp->getOperand(1));
-           PartTwo = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
-                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTemp),Builder.CreateAnd(notVec1,carryTemp)));
-	   carryTemp = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
-                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTemp),Builder.CreateAnd(notVec1,carryTemp)));
-            BB.getInstList().insert(Inst, PartTwo);
+        carryTempInstruction = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
+	    carryTempValue = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
+        BB.getInstList().insert(Inst, carryTempInstruction);
 
-            PartOne = BinaryOperator::CreateAnd(BinOp->getOperand(0),
-                                        Builder.CreateAnd(Val_Carry_temp,
-                                             Builder.CreateNot(BinOp->getOperand(1))));
+	    sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
+                                        Builder.CreateXor(carryTempValue,
+                                             BinOp->getOperand(1)));
 
-//          Value *CarryTempAddr = Builder.CreatePtrToInt(PartTwo->getValue(), Builder.getInt64Ty());
-            LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
+        LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
 
 
-            LLVM_DEBUG(dbgs() << "-*-" << " -> " << *PartTwo << "\n");
+        LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempInstruction << "\n");
 
-            // Replacing the custom made instruction with the old one
+        // Replacing the custom made instruction with the old one
 
-            ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+        ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
 
-            Changed = true;
+        Changed = true;
 
 
-            // Update the statistics
+        // Update the statistics
 
-            ++SubstCount;	
+        ++SubstCount;	
    }
 
    
    
     if(flag == 0)
     {
-    flag = 1;
+        flag = 1;
  
-	    auto notVec1 = Builder.CreateNot(BinOp->getOperand(1));
-	    carryTemp = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
-                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Val_Carry_temp),Builder.CreateAnd(notVec1,Val_Carry_temp)));
-    	    PartTwo = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),notVec1),
-                                   Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),Val_Carry_temp),Builder.CreateAnd(notVec1,Val_Carry_temp)));
-    	    BB.getInstList().insert(Inst, PartTwo);
+	    carryTempValue = Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
+    	carryTempInstruction = BinaryOperator::CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
+    	BB.getInstList().insert(Inst, carryTempInstruction);
     
-	    PartOne = BinaryOperator::CreateAnd(BinOp->getOperand(0),
-                                        Builder.CreateAnd(Val_Carry_temp,
-                                             Builder.CreateNot(BinOp->getOperand(1))));
+	    sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
+                                        Builder.CreateXor(initCarryTemp,
+                                             BinOp->getOperand(1)));
 
-//	    Value *CarryTempAddr = Builder.CreatePtrToInt(PartTwo->getValue(), Builder.getInt64Ty());
-	    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *PartOne << "\n");
+	    LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
 
     
-	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *PartTwo << "\n");
+	    LLVM_DEBUG(dbgs() << "-*-" << " -> " << *carryTempInstruction << "\n");
     
 	    // Replacing the custom made instruction with the old one
     
-	    ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+	    ReplaceInstWithInst(BB.getInstList(), Inst, sumTemp);
  
 	    Changed = true;
 
