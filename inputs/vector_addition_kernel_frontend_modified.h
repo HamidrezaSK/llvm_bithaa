@@ -3,9 +3,9 @@
 #include <stdint.h>
 
 void vector_addition_kernel(
-    uint32_t* vout, 
-    uint32_t* vin0,
-    uint32_t* vin1
+    uint64_t* vout, 
+    uint64_t* vin0,
+    uint64_t* vin1
 );
 
 #endif

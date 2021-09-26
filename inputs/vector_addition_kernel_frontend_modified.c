@@ -1,4 +1,4 @@
-#include "vector_addition_kernel.h"
+#include "vector_addition_kernel_frontend_modified.h"
 #include <stdint.h>
 
 void vector_addition_kernel(
