@@ -39,7 +39,7 @@ using namespace llvm;
 STATISTIC(SubstCount, "The # of substituted instructions");
 
 //-----------------------------------------------------------------------------
-// VECSub Implementaion
+// VECAdd Implementaion
 //-----------------------------------------------------------------------------
 bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
   bool Changed = false;
@@ -56,7 +56,7 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
     if (!BinOp)
       continue;
 
-    /// Skip instructions other than integer sub.
+    /// Skip instructions other than integer add.
     unsigned Opcode = BinOp->getOpcode();
     if (Opcode != Instruction::Add || !BinOp->getType()->isIntegerTy())
       continue;
@@ -72,12 +72,10 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
    if(flag == 1)
    {
         flag = 1;
-            sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
-                                        Builder.CreateXor(carryTempValue,
-                                             BinOp->getOperand(1)));
-//        carryTempInstruction = BinaryOperator::CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
+        sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
+                                    Builder.CreateXor(carryTempValue,
+                                            BinOp->getOperand(1)));
 	    carryTempValue = Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1)),Builder.CreateOr(Builder.CreateAnd(BinOp->getOperand(0),carryTempValue),Builder.CreateAnd(BinOp->getOperand(1),carryTempValue)));
-  //      BB.getInstList().insert(Inst, carryTempInstruction);
 
 
         LLVM_DEBUG(dbgs() << *BinOp << " -> " << *sumTemp << "\n");
@@ -104,7 +102,6 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
         flag = 1;
  
 	    carryTempValue = Builder.CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
-    //	carryTempInstruction = BinaryOperator::CreateAnd(BinOp->getOperand(0),BinOp->getOperand(1));
     //	BB.getInstList().insert(Inst, carryTempInstruction);
     
 	    sumTemp = BinaryOperator::CreateXor(BinOp->getOperand(0),
