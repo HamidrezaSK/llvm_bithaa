@@ -58,7 +58,7 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
 
     /// Skip instructions other than integer sub.
     unsigned Opcode = BinOp->getOpcode();
-    if (Opcode != Instruction::Add || !BinOp->getType()->isInteger64Ty())
+    if (Opcode != Instruction::Add || !BinOp->getType()->isIntegerTy())
       continue;
 
     // A uniform API for creating instructions and inserting
@@ -89,7 +89,7 @@ bool VECAdd::runOnBasicBlock(BasicBlock &BB) {
 
         // Replacing the custom made instruction with the old one
 
-        ReplaceInstWithInst(BB.getInstList(), Inst, PartOne);
+        ReplaceInstWithInst(BB.getInstList(), Inst, sumTemp);
 
         Changed = true;
 
