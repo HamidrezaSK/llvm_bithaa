@@ -1,9 +1,9 @@
 //========================================================================
 // FILE:
-//    VECSub.h
+//    VECAdd.h
 //
 // DESCRIPTION:
-//    Declares the VECSub pass for the new and the legacy pass managers.
+//    Declares the VECAdd pass for the new and the legacy pass managers.
 //
 //========================================================================
 #ifndef LLVM_TUTOR_VEC_ADD_H
