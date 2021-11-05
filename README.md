@@ -47,8 +47,6 @@ $ ninja
 
 After this, the plugins are ready to be used in the `.build/lib/` folder as `*.so` files.
 
-NAMEFILE
-
 Create your input files in the `inputs` folder. Then, follow these commands to produce your object files. Note that our you need to replace some names in the following code.
 
 ```bash
