@@ -1,69 +1,63 @@
-# LLVM_Pass
+# BitHAA Front-End Sub-system
 
-We are trying to write a simple out of tree llvm pass
+This repository contains a version of BitHAA's front-end section. Here, we will instruct the readers on how to convert their normal calculations into BitSliced ones. **Note that** this is not the final version of our Front-End, but the difference is negligible. Instructions on installation, building, and running this module are given.
 
-## build llvm
+This image was shown in the article in order to further demonstrate the Front-End's workflow:
 
+![flow](./flow.png)
 
+## Prerequisites
 
+You only need to clone the `LLVM` project:
 ```bash
-git clone https://github.com/llvm/llvm-project.git
-mkdir .build
-cd .build
-cmake -G "Ninja" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=2 ../llvm-project/llvm
-ninja -j8 all
+$ git clone https://github.com/llvm/llvm-project.git
 ```
 
-## HELLO_WORLD PASS
-this is just an analysis pass that reads the file's functions and returns its name and number of it's arguments
+## Building `LLVM`
 
-## build
-
-```bash
-export LLVM_DIR=/<path to your llvm .build folder>/lib/cmake/llvm/
-
-cd HelloWorld
-
-mkdir .build
-
-cd .build
-
-cmake -G "Ninja" ../
-
-ninja
-```
-now we have our libHelloWorld.so file which we can pass to out opt tool to create the pass pipline.
-In order to use this we have to generate IR format from input files in input and pass them to opt as input and our passes so file as pass pipeline like this.
+Here you need to create the `LLVM`'s `.build` folder:
 
 ```bash
-cd ../inputs
-
-/<path to your llvm .build folder>/bin/clang -emit-llvm -S -O1 hello.c
-/<path to your llvm .build folder>/bin/opt -load-pass-plugin ../lib/libHelloWorld.so -passes=hello-world -disable-output hello.ll
-
+$ mkdir .build
+$ cd .build
+$ cmake -G "Ninja" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=2 ../llvm-project/llvm
+$ ninja -j8 all
 ```
-## MBAADD a transformation PASS
-this is a transformation pass that reads the file's 8bit add instructions and change them
 
-## build
+**(Optional)** You can set environment variables in order to make the next steps. Something like this could be done:
 ```bash
-cd <path to project>
-
-mkdir .build
-
-cd .build
-
-cmake -G "Ninja" ../
-
-ninja
+$ export LLVM_PATH=<Path to llvm-project folder>
+$ export PROJECT_PATH=<Path to our code>
 ```
-now all so files are created in lib folder.
 
-## usage
+## Usage
+
+compiling
+
+Start writing your libraries in the `lib` folder. Two sample libraries are shown in the `lib` folder of this repo.
+
 ```bash
-cd ../inputs
-
-/<path to your llvm .build folder>/bin/clang -emit-llvm -S -O1 input_for_mba.c 
-/<path to your llvm .build folder>/bin/opt -load-pass-plugin ../lib/libMBAAdd.so -passes=mba-add input_for_mba.ll -S -o output_for_mba.ll
-
+$ export LLVM_DIR=/${BUILD_PATH}/lib/cmake/llvm/
+$ cd ${PROJECT_PATH}
+$ mkdir .build
+$ cd .build
+$ cmake -G "Ninja" ../
+$ ninja
 ```
+
+After this, the plugins are ready to be used in the `.build/lib/` folder as `*.so` files.
+
+NAMEFILE
+
+Create your input files in the `inputs` folder. Then, follow these commands to produce your object files. Note that our you need to replace some names in the following code.
+
+```bash
+$ cd ${PROJECT_PATH}/inputs
+$ /${LLVM_PATH}/.build/bin/clang -emit-llvm -S -O1 <INPUT_FILENAME.c>
+$ /${LLVM_PATH}/.build/bin/opt -load-pass-plugin <../.build/lib/DESIRED_LIB.so> -passes=<Pass Name> <INPUT_FILENAME.ll> -S -o <OUTPUT_FILENAME.ll>
+```
+
+Now, your object files are ready to use in the `inputs` folder.
+
+
+In this repository, we have provided an example of vectorized add/sub to help readers understand the procedure by running the code. Note that these two operations are for demonstration purposes, and we will provide our complete and final Front-End in our open-source tool.

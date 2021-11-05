@@ -9,7 +9,6 @@
 //      sum_temp = vin0[0]  ^ t0 ^ carry_temp;
 //      carry_temp = (vin0[0]  & t0) | (vin0[0]  & carry_temp) | (t0  & carry_temp);
 //      t0 = sum_temp;
-
 //      vout[0] =  t0;
 //
 //
