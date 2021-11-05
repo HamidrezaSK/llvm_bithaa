@@ -30,9 +30,7 @@ $ export LLVM_PATH=<Path to llvm-project folder>
 $ export PROJECT_PATH=<Path to our code>
 ```
 
-## Usage
-
-compiling
+## Building your application
 
 Start writing your libraries in the `lib` folder. Two sample libraries are shown in the `lib` folder of this repo.
 
@@ -46,6 +44,8 @@ $ ninja
 ```
 
 After this, the plugins are ready to be used in the `.build/lib/` folder as `*.so` files.
+
+## Usage
 
 Create your input files in the `inputs` folder. Then, follow these commands to produce your object files. Note that our you need to replace some names in the following code.
 
